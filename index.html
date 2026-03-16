@@ -412,6 +412,27 @@ function BiometriaQuiz() {
     setMode("quiz");
   };
 
+  const startConquista = () => {
+    const mastered = getMasteredSet();
+    const unconquered = QUESTIONS.map((q, i) => ({...q, _origIdx: i})).filter((_, i) => !mastered.has(i));
+    if (unconquered.length === 0) return;
+    const picked = shuffle(unconquered).slice(0, Math.min(20, unconquered.length));
+    const shuffled = shuffleOptions(picked);
+    setQuestions(shuffled);
+    setCurrent(0);
+    setSelected(null);
+    setRevealed(false);
+    setScore(0);
+    setWrong([]);
+    setStartTime(Date.now());
+    setElapsed(0);
+    setIsSimulation(false);
+    setIsRipasso(false);
+    setTimeLimit(null);
+    setShowExitConfirm(false);
+    setMode("quiz");
+  };
+
   useEffect(() => {
     if (mode === "quiz") {
       timerRef.current = setInterval(() => {
@@ -482,19 +503,27 @@ function BiometriaQuiz() {
           <p style={{color:"#888",fontSize:12,marginBottom:4}}>Creato da Gabriele Lannutti</p>
           <p style={{color:"#555",fontSize:11,marginBottom:24}}>Le domande vengono mescolate ogni volta. Ripetibile all'infinito.</p>
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {[
-              {label:"SIMULAZIONE ESAME (40 domande, 60 min, voto)",count:40,color:"#ff4444",sim:true},
-              {label:"RIPASSO VELOCE (20 domande)",count:20,color:"#44aaff",sim:false},
-              {label:"MARATONA (100 domande)",count:100,color:"#ff8800",sim:false},
-              {label:"TUTTE LE 250 DOMANDE",count:250,color:"#aa44ff",sim:false},
-            ].map(btn=>(
-              <button key={btn.count+""+(btn.sim?1:0)} onClick={()=>startQuiz(btn.count,btn.sim)}
-                style={{padding:"14px 20px",background:"transparent",border:`2px solid ${btn.color}`,color:btn.color,fontSize:13,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s"}}
-                onMouseEnter={e=>{e.target.style.background=btn.color;e.target.style.color="#0a0a0f"}}
-                onMouseLeave={e=>{e.target.style.background="transparent";e.target.style.color=btn.color}}>
-                {btn.label}
-              </button>
-            ))}
+            {(() => {
+              const unconqueredCount = QUESTIONS.length - masteredCount;
+              const showConquista = unconqueredCount > 0;
+              const conquistaLabel = "DOMANDE DA CONQUISTARE (" + unconqueredCount + ")";
+              const buttons = [
+                {label:"SIMULAZIONE ESAME (40 domande, 60 min, voto)",action:()=>startQuiz(40,true),color:"#ff4444"},
+                showConquista
+                  ? {label:conquistaLabel,action:startConquista,color:"#44aaff"}
+                  : {label:"RIPASSO VELOCE (20 domande)",action:()=>startQuiz(20,false),color:"#44aaff"},
+                {label:"MARATONA (100 domande)",action:()=>startQuiz(100,false),color:"#ff8800"},
+                {label:"TUTTE LE 250 DOMANDE",action:()=>startQuiz(250,false),color:"#aa44ff"},
+              ];
+              return buttons.map((btn,i)=>(
+                <button key={i} onClick={btn.action}
+                  style={{padding:"14px 20px",background:"transparent",border:`2px solid ${btn.color}`,color:btn.color,fontSize:13,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s"}}
+                  onMouseEnter={e=>{e.target.style.background=btn.color;e.target.style.color="#0a0a0f"}}
+                  onMouseLeave={e=>{e.target.style.background="transparent";e.target.style.color=btn.color}}>
+                  {btn.label}
+                </button>
+              ));
+            })()}
             {ripassoCount > 0 && (
               <button onClick={startRipasso}
                 style={{padding:"14px 20px",background:"transparent",border:"2px solid #00cc66",color:"#00cc66",fontSize:13,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s",marginTop:4}}
