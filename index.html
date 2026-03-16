@@ -311,7 +311,38 @@ function BiometriaQuiz() {
   const [isSimulation, setIsSimulation] = useState(false);
   const [timeLimit, setTimeLimit] = useState(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [isRipasso, setIsRipasso] = useState(false);
+  const [ripassoCount, setRipassoCount] = useState(0);
   const timerRef = useRef(null);
+
+  // localStorage helpers for ripasso
+  const getRipassoSet = () => {
+    try {
+      const raw = localStorage.getItem("biometria_ripasso");
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch(e) { return new Set(); }
+  };
+  const saveRipassoSet = (s) => {
+    try { localStorage.setItem("biometria_ripasso", JSON.stringify([...s])); } catch(e) {}
+  };
+  const addToRipasso = (questionText) => {
+    const s = getRipassoSet();
+    // Find the original index in QUESTIONS by matching q text
+    const idx = QUESTIONS.findIndex(q => q.q === questionText);
+    if (idx !== -1) { s.add(idx); saveRipassoSet(s); }
+  };
+  const removeFromRipasso = (questionText) => {
+    const s = getRipassoSet();
+    const idx = QUESTIONS.findIndex(q => q.q === questionText);
+    if (idx !== -1) { s.delete(idx); saveRipassoSet(s); }
+  };
+
+  // Update ripasso count on mount and when returning to menu
+  useEffect(() => {
+    if (mode === "menu") {
+      setRipassoCount(getRipassoSet().size);
+    }
+  }, [mode]);
 
   const startQuiz = (count, sim = false) => {
     const shuffled = shuffleOptions(shuffle(QUESTIONS).slice(0, count));
@@ -324,7 +355,28 @@ function BiometriaQuiz() {
     setStartTime(Date.now());
     setElapsed(0);
     setIsSimulation(sim);
+    setIsRipasso(false);
     setTimeLimit(sim ? 3600 : null);
+    setShowExitConfirm(false);
+    setMode("quiz");
+  };
+
+  const startRipasso = () => {
+    const ripassoIndices = getRipassoSet();
+    if (ripassoIndices.size === 0) return;
+    const ripassoQuestions = [...ripassoIndices].map(i => QUESTIONS[i]).filter(Boolean);
+    const shuffled = shuffleOptions(shuffle(ripassoQuestions));
+    setQuestions(shuffled);
+    setCurrent(0);
+    setSelected(null);
+    setRevealed(false);
+    setScore(0);
+    setWrong([]);
+    setStartTime(Date.now());
+    setElapsed(0);
+    setIsSimulation(false);
+    setIsRipasso(true);
+    setTimeLimit(null);
     setShowExitConfirm(false);
     setMode("quiz");
   };
@@ -349,8 +401,15 @@ function BiometriaQuiz() {
     if (selected === null) return;
     setRevealed(true);
     const q = questions[current];
-    if (selected === q.ans) setScore(s => s + 1);
-    else setWrong(w => [...w, { ...q, userAns: selected }]);
+    if (selected === q.ans) {
+      setScore(s => s + 1);
+      // If in ripasso mode, remove from ripasso set on correct answer
+      if (isRipasso) removeFromRipasso(q.q);
+    } else {
+      setWrong(w => [...w, { ...q, userAns: selected }]);
+      // Always add wrong answers to ripasso set
+      addToRipasso(q.q);
+    }
   };
 
   const handleNext = () => {
@@ -406,6 +465,14 @@ function BiometriaQuiz() {
                 {btn.label}
               </button>
             ))}
+            {ripassoCount > 0 && (
+              <button onClick={startRipasso}
+                style={{padding:"14px 20px",background:"transparent",border:"2px solid #00cc66",color:"#00cc66",fontSize:13,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s",marginTop:4}}
+                onMouseEnter={e=>{e.target.style.background="#00cc66";e.target.style.color="#0a0a0f"}}
+                onMouseLeave={e=>{e.target.style.background="transparent";e.target.style.color="#00cc66"}}>
+                {"RIPASSO (" + ripassoCount + " domande da rivedere)"}
+              </button>
+            )}
           </div>
           <p style={{color:"#333",fontSize:10,marginTop:16}}>{QUESTIONS.length} domande totali nel database</p>
         </div>
