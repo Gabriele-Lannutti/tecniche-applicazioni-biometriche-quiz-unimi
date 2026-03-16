@@ -372,11 +372,11 @@ function BiometriaQuiz() {
   const STREAK_LEVELS = [
     {min:250, fires:"💀", msg:"Cooooosa?! 250 di fila?! Se non prendi 30L sei un pollo 😜", duration:4000, style:"skull"},
     {min:200, fires:"🔥🔥🔥🔥🔥🔥", msg:"200 di fila!", duration:2500, style:"epic"},
-    {min:100, fires:"🔥🔥🔥🔥🔥", msg:"100 di fila!", duration:2500, style:"epic"},
+    {min:100, fires:"🔥🔥🔥🔥🔥", msg:"100 di fila!", duration:2500, style:"big"},
     {min:50,  fires:"🔥🔥🔥🔥", msg:"50 di fila!", duration:2000, style:"big"},
-    {min:20,  fires:"🔥🔥🔥", msg:"20 di fila!", duration:2000, style:"medium"},
-    {min:10,  fires:"🔥🔥", msg:"10 di fila!", duration:2000, style:"small"},
-    {min:5,   fires:"🔥", msg:"5 di fila!", duration:2000, style:"tiny"},
+    {min:20,  fires:"🔥🔥🔥", msg:"20 di fila!", duration:2000, style:"big"},
+    {min:10,  fires:"🔥🔥", msg:"10 di fila!", duration:2000, style:"big"},
+    {min:5,   fires:"🔥", msg:"5 di fila!", duration:2000, style:"big"},
   ];
   const getStreakFires = (s) => {
     if (s >= 250) return "💀";
@@ -879,37 +879,6 @@ function BiometriaQuiz() {
         <button onClick={handleExit} style={{background:"transparent",border:"1px solid #555",color:"#888",fontSize:10,padding:"4px 10px",borderRadius:3,cursor:"pointer",fontFamily:"inherit"}}>ESCI</button>
       </div>
       <div style={{height:3,background:"#1a1a2e"}}><div style={{height:"100%",background: isSimulation?"#ff4444":"#44aaff",width:`${((current+1)/questions.length)*100}%`,transition:"width 0.3s"}}/></div>
-      {/* Streak toast */}
-      {streakToast && (
-        <div style={{
-          position:"relative",
-          zIndex:100,
-          display:"flex",
-          justifyContent:"center",
-          padding:"0 16px",
-          animation: "toast-in 0.3s ease-out"
-        }}>
-          <div style={{
-            marginTop:8,
-            padding: streakToast.style==="skull" ? "16px 24px" : streakToast.style==="epic" ? "12px 20px" : "8px 16px",
-            background: streakToast.style==="skull" ? "rgba(100,0,180,0.95)" : streakToast.style==="epic" ? "rgba(170,68,255,0.2)" : streakToast.style==="big" ? "rgba(255,136,0,0.15)" : "rgba(255,136,0,0.08)",
-            border: streakToast.style==="skull" ? "2px solid #aa44ff" : streakToast.style==="epic" ? "1px solid rgba(170,68,255,0.5)" : streakToast.style==="big" ? "1px solid rgba(255,136,0,0.3)" : "1px solid rgba(255,136,0,0.15)",
-            borderRadius:8,
-            textAlign:"center",
-            animation: streakToast.style==="skull" ? "toast-skull-shake 0.8s ease-in-out" : streakToast.style==="epic" ? "toast-epic-pulse 1.5s ease-in-out infinite" : streakToast.style==="big" ? "toast-glow-pulse 1.5s ease-in-out infinite" : "none"
-          }}>
-            <p style={{
-              fontSize: streakToast.style==="skull" ? 18 : streakToast.style==="epic" ? 15 : streakToast.style==="big" ? 13 : 11,
-              fontWeight:700,
-              color: streakToast.style==="skull" ? "#fff" : streakToast.style==="epic" ? "#aa44ff" : "#ff8800",
-              fontFamily:"inherit",
-              margin:0
-            }}>
-              {streakToast.fires} {streakToast.msg}
-            </p>
-          </div>
-        </div>
-      )}
       <div style={{flex:1,display:"flex",flexDirection:"column",padding:16,maxWidth:700,margin:"0 auto",width:"100%"}}>
         <p style={{fontSize:14,lineHeight:1.5,color:"#fff",fontWeight:600,marginBottom:20,minHeight:50}}>{q.q}</p>
         <div style={{display:"flex",flexDirection:"column",gap:8,flex:1}}>
@@ -932,6 +901,34 @@ function BiometriaQuiz() {
           <div style={{background:"#111122",border:"1px solid #333",borderRadius:4,padding:12,marginTop:12,fontSize:11,lineHeight:1.5}}>
             <span style={{color:selected===q.ans?"#00ff88":"#ff4444",fontWeight:900}}>{selected===q.ans?"✓ CORRETTO":"✗ SBAGLIATO"}</span>
             <p style={{color:"#aaa",marginTop:6}}>{q.expl}</p>
+          </div>
+        )}
+        {/* Streak toast — above confirm button */}
+        {streakToast && (
+          <div style={{
+            display:"flex",
+            justifyContent:"center",
+            marginTop:8,
+            animation: "toast-in 0.3s ease-out"
+          }}>
+            <div style={{
+              padding: streakToast.style==="skull" ? "16px 24px" : streakToast.style==="epic" ? "12px 20px" : "10px 18px",
+              background: streakToast.style==="skull" ? "rgba(100,0,180,0.95)" : streakToast.style==="epic" ? "rgba(170,68,255,0.2)" : "rgba(255,136,0,0.15)",
+              border: streakToast.style==="skull" ? "2px solid #aa44ff" : streakToast.style==="epic" ? "1px solid rgba(170,68,255,0.5)" : "1px solid rgba(255,136,0,0.3)",
+              borderRadius:8,
+              textAlign:"center",
+              animation: streakToast.style==="skull" ? "toast-skull-shake 0.8s ease-in-out" : streakToast.style==="epic" ? "toast-epic-pulse 1.5s ease-in-out infinite" : "toast-glow-pulse 1.5s ease-in-out infinite"
+            }}>
+              <p style={{
+                fontSize: streakToast.style==="skull" ? 18 : streakToast.style==="epic" ? 15 : 14,
+                fontWeight:700,
+                color: streakToast.style==="skull" ? "#fff" : streakToast.style==="epic" ? "#aa44ff" : "#ff8800",
+                fontFamily:"inherit",
+                margin:0
+              }}>
+                {streakToast.fires} {streakToast.msg}
+              </p>
+            </div>
           </div>
         )}
         <div style={{marginTop:12,display:"flex",gap:10}}>
