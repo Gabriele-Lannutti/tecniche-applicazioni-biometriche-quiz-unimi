@@ -22,6 +22,30 @@
       0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.3); }
       50% { box-shadow: 0 0 40px rgba(255,215,0,0.6); }
     }
+    @keyframes toast-in {
+      0% { transform: translateY(-30px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes toast-out {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-20px); opacity: 0; }
+    }
+    @keyframes toast-glow-pulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(255,136,0,0.3); }
+      50% { box-shadow: 0 0 25px rgba(255,136,0,0.6); }
+    }
+    @keyframes toast-epic-pulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(170,68,255,0.4); transform: scale(1); }
+      50% { box-shadow: 0 0 40px rgba(170,68,255,0.8); transform: scale(1.02); }
+    }
+    @keyframes toast-skull-shake {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      10% { transform: scale(1.05) rotate(-2deg); }
+      20% { transform: scale(1.05) rotate(2deg); }
+      30% { transform: scale(1.05) rotate(-2deg); }
+      40% { transform: scale(1.05) rotate(2deg); }
+      50% { transform: scale(1.05) rotate(0deg); }
+    }
   </style>
 </head>
 <body>
@@ -334,7 +358,74 @@ function BiometriaQuiz() {
   });
   const [certGenerated, setCertGenerated] = useState(false);
   const certRedeemed = certName.trim().length > 0;
+  const [streak, setStreak] = useState(() => {
+    try { return parseInt(localStorage.getItem("biometria_streak_current")) || 0; } catch(e) { return 0; }
+  });
+  const [bestStreak, setBestStreak] = useState(() => {
+    try { return parseInt(localStorage.getItem("biometria_streak_best")) || 0; } catch(e) { return 0; }
+  });
+  const [streakToast, setStreakToast] = useState(null);
+  const streakToastTimer = useRef(null);
   const timerRef = useRef(null);
+
+  // Streak helpers
+  const STREAK_LEVELS = [
+    {min:250, fires:"💀", msg:"Cooooosa?! 250 di fila?! Se non prendi 30L sei un pollo 😜", duration:4000, style:"skull"},
+    {min:200, fires:"🔥🔥🔥🔥🔥🔥", msg:"200 di fila!", duration:2500, style:"epic"},
+    {min:100, fires:"🔥🔥🔥🔥🔥", msg:"100 di fila!", duration:2500, style:"epic"},
+    {min:50,  fires:"🔥🔥🔥🔥", msg:"50 di fila!", duration:2000, style:"big"},
+    {min:20,  fires:"🔥🔥🔥", msg:"20 di fila!", duration:2000, style:"medium"},
+    {min:10,  fires:"🔥🔥", msg:"10 di fila!", duration:2000, style:"small"},
+    {min:5,   fires:"🔥", msg:"5 di fila!", duration:2000, style:"tiny"},
+  ];
+  const getStreakFires = (s) => {
+    if (s >= 250) return "💀";
+    if (s >= 200) return "🔥🔥🔥🔥🔥🔥";
+    if (s >= 100) return "🔥🔥🔥🔥🔥";
+    if (s >= 50) return "🔥🔥🔥🔥";
+    if (s >= 20) return "🔥🔥🔥";
+    if (s >= 10) return "🔥🔥";
+    if (s >= 5) return "🔥";
+    if (s >= 1) return "🔥";
+    return "";
+  };
+  const saveStreak = (current, best) => {
+    try {
+      localStorage.setItem("biometria_streak_current", current.toString());
+      localStorage.setItem("biometria_streak_best", best.toString());
+    } catch(e) {}
+  };
+  const triggerStreakToast = (newStreak) => {
+    const level = STREAK_LEVELS.find(l => newStreak === l.min);
+    if (!level) return;
+    if (streakToastTimer.current) clearTimeout(streakToastTimer.current);
+    setStreakToast({...level, count: newStreak});
+    streakToastTimer.current = setTimeout(() => setStreakToast(null), level.duration);
+  };
+  const incrementStreak = () => {
+    const newStreak = streak + 1;
+    const newBest = Math.max(bestStreak, newStreak);
+    setStreak(newStreak);
+    setBestStreak(newBest);
+    saveStreak(newStreak, newBest);
+    triggerStreakToast(newStreak);
+  };
+  const resetStreak = () => {
+    setStreak(0);
+    try { localStorage.setItem("biometria_streak_current", "0"); } catch(e) {}
+  };
+
+  // DEV: test streak at milestones
+  const devTestStreak = () => {
+    const milestones = [5,10,20,50,100,200,250];
+    const currentIdx = milestones.findIndex(m => m > streak);
+    const target = currentIdx === -1 ? 250 : milestones[currentIdx];
+    const newBest = Math.max(bestStreak, target);
+    setStreak(target);
+    setBestStreak(newBest);
+    saveStreak(target, newBest);
+    triggerStreakToast(target);
+  };
 
   // localStorage helpers for ripasso
   const getRipassoSet = () => {
@@ -379,10 +470,14 @@ function BiometriaQuiz() {
       localStorage.removeItem("biometria_ripasso");
       localStorage.removeItem("biometria_mastered");
       localStorage.removeItem("biometria_cert_name");
+      localStorage.removeItem("biometria_streak_current");
+      localStorage.removeItem("biometria_streak_best");
     } catch(e) {}
     setRipassoCount(0);
     setMasteredCount(0);
     setCertName("");
+    setStreak(0);
+    setBestStreak(0);
     setShowResetFinal(false);
     setShowResetConfirm(false);
   };
@@ -484,9 +579,11 @@ function BiometriaQuiz() {
       setScore(s => s + 1);
       if (isRipasso) removeFromRipasso(q.q);
       addToMastered(q.q);
+      incrementStreak();
     } else {
       setWrong(w => [...w, { ...q, userAns: selected }]);
       addToRipasso(q.q);
+      resetStreak();
     }
   };
 
@@ -582,6 +679,24 @@ function BiometriaQuiz() {
             </div>
           </div>
 
+          {/* Streak display in menu */}
+          {(streak > 0 || bestStreak > 0) && (
+            <div style={{marginTop:10,padding:"8px 16px",background:"#111118",borderRadius:6,border:"1px solid #222"}}>
+              {streak > 0 && (
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom: bestStreak > 0 ? 4 : 0}}>
+                  <span style={{fontSize:11,color:"#888"}}>Streak attuale</span>
+                  <span style={{fontSize:12,fontWeight:700,color:"#ff8800"}}>{getStreakFires(streak)} {streak}</span>
+                </div>
+              )}
+              {bestStreak > 0 && (
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{fontSize:11,color:"#888"}}>Miglior streak</span>
+                  <span style={{fontSize:12,fontWeight:700,color:"#ffd700"}}>{getStreakFires(bestStreak)} {bestStreak}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Reset — ghost button, very discreet */}
           {masteredCount > 0 && (
             <p onClick={() => setShowResetConfirm(true)} style={{color:"#2a2a2a",fontSize:9,marginTop:12,cursor:"pointer",transition:"color 0.2s"}} onMouseEnter={e=>e.target.style.color="#555"} onMouseLeave={e=>e.target.style.color="#2a2a2a"}>Reset progresso</p>
@@ -615,8 +730,11 @@ function BiometriaQuiz() {
             </div>
           )}
 
-          {/* DEV: temporary test button */}
-          <p onClick={devCompleteAll} style={{color:"#1a1a1a",fontSize:8,marginTop:20,cursor:"pointer",transition:"color 0.2s",userSelect:"none"}} onMouseEnter={e=>e.target.style.color="#333"} onMouseLeave={e=>e.target.style.color="#1a1a1a"}>[DEV] Completa tutto</p>
+          {/* DEV: temporary test buttons */}
+          <div style={{display:"flex",gap:16,justifyContent:"center",marginTop:20}}>
+            <p onClick={devCompleteAll} style={{color:"#1a1a1a",fontSize:8,cursor:"pointer",transition:"color 0.2s",userSelect:"none"}} onMouseEnter={e=>e.target.style.color="#333"} onMouseLeave={e=>e.target.style.color="#1a1a1a"}>[DEV] Completa tutto</p>
+            <p onClick={devTestStreak} style={{color:"#1a1a1a",fontSize:8,cursor:"pointer",transition:"color 0.2s",userSelect:"none"}} onMouseEnter={e=>e.target.style.color="#333"} onMouseLeave={e=>e.target.style.color="#1a1a1a"}>[DEV] Streak +</p>
+          </div>
 
           {/* Certificate modal */}
           {showCert && (
@@ -755,11 +873,43 @@ function BiometriaQuiz() {
         <div style={{display:"flex",gap:16}}>
           <span style={{color:"#00ff88"}}>✓ {score}</span>
           <span style={{color:"#ff4444"}}>✗ {wrong.length}</span>
+          {streak > 0 && <span style={{color:"#ff8800"}}>{getStreakFires(streak)} {streak}</span>}
         </div>
         <span style={{color: isSimulation && (3600-elapsed)<300 ? "#ff4444" : "#888"}}>{isSimulation ? formatCountdown(elapsed) : formatTime(elapsed)}</span>
         <button onClick={handleExit} style={{background:"transparent",border:"1px solid #555",color:"#888",fontSize:10,padding:"4px 10px",borderRadius:3,cursor:"pointer",fontFamily:"inherit"}}>ESCI</button>
       </div>
       <div style={{height:3,background:"#1a1a2e"}}><div style={{height:"100%",background: isSimulation?"#ff4444":"#44aaff",width:`${((current+1)/questions.length)*100}%`,transition:"width 0.3s"}}/></div>
+      {/* Streak toast */}
+      {streakToast && (
+        <div style={{
+          position:"relative",
+          zIndex:100,
+          display:"flex",
+          justifyContent:"center",
+          padding:"0 16px",
+          animation: "toast-in 0.3s ease-out"
+        }}>
+          <div style={{
+            marginTop:8,
+            padding: streakToast.style==="skull" ? "16px 24px" : streakToast.style==="epic" ? "12px 20px" : "8px 16px",
+            background: streakToast.style==="skull" ? "rgba(100,0,180,0.95)" : streakToast.style==="epic" ? "rgba(170,68,255,0.2)" : streakToast.style==="big" ? "rgba(255,136,0,0.15)" : "rgba(255,136,0,0.08)",
+            border: streakToast.style==="skull" ? "2px solid #aa44ff" : streakToast.style==="epic" ? "1px solid rgba(170,68,255,0.5)" : streakToast.style==="big" ? "1px solid rgba(255,136,0,0.3)" : "1px solid rgba(255,136,0,0.15)",
+            borderRadius:8,
+            textAlign:"center",
+            animation: streakToast.style==="skull" ? "toast-skull-shake 0.8s ease-in-out" : streakToast.style==="epic" ? "toast-epic-pulse 1.5s ease-in-out infinite" : streakToast.style==="big" ? "toast-glow-pulse 1.5s ease-in-out infinite" : "none"
+          }}>
+            <p style={{
+              fontSize: streakToast.style==="skull" ? 18 : streakToast.style==="epic" ? 15 : streakToast.style==="big" ? 13 : 11,
+              fontWeight:700,
+              color: streakToast.style==="skull" ? "#fff" : streakToast.style==="epic" ? "#aa44ff" : "#ff8800",
+              fontFamily:"inherit",
+              margin:0
+            }}>
+              {streakToast.fires} {streakToast.msg}
+            </p>
+          </div>
+        </div>
+      )}
       <div style={{flex:1,display:"flex",flexDirection:"column",padding:16,maxWidth:700,margin:"0 auto",width:"100%"}}>
         <p style={{fontSize:14,lineHeight:1.5,color:"#fff",fontWeight:600,marginBottom:20,minHeight:50}}>{q.q}</p>
         <div style={{display:"flex",flexDirection:"column",gap:8,flex:1}}>
