@@ -415,17 +415,6 @@ function BiometriaQuiz() {
     try { localStorage.setItem("biometria_streak_current", "0"); } catch(e) {}
   };
 
-  // DEV: test streak at milestones
-  const devTestStreak = () => {
-    const milestones = [5,10,20,50,100,200,250];
-    const currentIdx = milestones.findIndex(m => m > streak);
-    const target = currentIdx === -1 ? 250 : milestones[currentIdx];
-    const newBest = Math.max(bestStreak, target);
-    setStreak(target);
-    setBestStreak(newBest);
-    saveStreak(target, newBest);
-    triggerStreakToast(target);
-  };
 
   // localStorage helpers for ripasso
   const getRipassoSet = () => {
@@ -482,12 +471,6 @@ function BiometriaQuiz() {
     setShowResetConfirm(false);
   };
 
-  // DEV: complete all for testing (TEMPORARY)
-  const devCompleteAll = () => {
-    const s = new Set(QUESTIONS.map((_, i) => i));
-    saveMasteredSet(s);
-    setMasteredCount(QUESTIONS.length);
-  };
 
   // Update counts on mount and when returning to menu
   useEffect(() => {
@@ -730,11 +713,6 @@ function BiometriaQuiz() {
             </div>
           )}
 
-          {/* DEV: temporary test buttons */}
-          <div style={{display:"flex",gap:16,justifyContent:"center",marginTop:20}}>
-            <p onClick={devCompleteAll} style={{color:"#1a1a1a",fontSize:8,cursor:"pointer",transition:"color 0.2s",userSelect:"none"}} onMouseEnter={e=>e.target.style.color="#333"} onMouseLeave={e=>e.target.style.color="#1a1a1a"}>[DEV] Completa tutto</p>
-            <p onClick={devTestStreak} style={{color:"#1a1a1a",fontSize:8,cursor:"pointer",transition:"color 0.2s",userSelect:"none"}} onMouseEnter={e=>e.target.style.color="#333"} onMouseLeave={e=>e.target.style.color="#1a1a1a"}>[DEV] Streak +</p>
-          </div>
 
           {/* Certificate modal */}
           {showCert && (
