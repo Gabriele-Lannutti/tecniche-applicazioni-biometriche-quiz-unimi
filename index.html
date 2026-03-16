@@ -329,8 +329,11 @@ function BiometriaQuiz() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showResetFinal, setShowResetFinal] = useState(false);
   const [showCert, setShowCert] = useState(false);
-  const [certName, setCertName] = useState("");
+  const [certName, setCertName] = useState(() => {
+    try { return localStorage.getItem("biometria_cert_name") || ""; } catch(e) { return ""; }
+  });
   const [certGenerated, setCertGenerated] = useState(false);
+  const certRedeemed = certName.trim().length > 0;
   const timerRef = useRef(null);
 
   // localStorage helpers for ripasso
@@ -375,9 +378,11 @@ function BiometriaQuiz() {
     try {
       localStorage.removeItem("biometria_ripasso");
       localStorage.removeItem("biometria_mastered");
+      localStorage.removeItem("biometria_cert_name");
     } catch(e) {}
     setRipassoCount(0);
     setMasteredCount(0);
+    setCertName("");
     setShowResetFinal(false);
     setShowResetConfirm(false);
   };
@@ -558,11 +563,11 @@ function BiometriaQuiz() {
 
           {/* Easter egg button — only when 250/250 */}
           {masteredCount >= QUESTIONS.length && (
-            <button onClick={() => {setShowCert(true);setCertGenerated(false);setCertName("");}}
+            <button onClick={() => {setShowCert(true); if(certRedeemed) setCertGenerated(true); else setCertGenerated(false);}}
               style={{marginTop:16,padding:"14px 20px",background:"transparent",border:"2px solid #ffd700",color:"#ffd700",fontSize:13,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s",width:"100%"}}
               onMouseEnter={e=>{e.target.style.background="#ffd700";e.target.style.color="#0a0a0f"}}
               onMouseLeave={e=>{e.target.style.background="transparent";e.target.style.color="#ffd700"}}>
-              {"🏆 HAI CONQUISTATO TUTTO — RITIRA IL CERTIFICATO"}
+              {certRedeemed ? "🏆 GUARDA IL TUO CERTIFICATO" : "🏆 HAI CONQUISTATO TUTTO — RITIRA IL CERTIFICATO"}
             </button>
           )}
 
@@ -646,7 +651,7 @@ function BiometriaQuiz() {
                       style={{width:"100%",padding:"10px 14px",background:"#111118",border:"1px solid #333",borderRadius:4,color:"#fff",fontSize:14,fontFamily:"inherit",outline:"none",textAlign:"center",marginBottom:16}}
                     />
                     <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-                      <button onClick={() => {if(certName.trim()) setCertGenerated(true);}}
+                      <button onClick={() => {if(certName.trim()){try{localStorage.setItem("biometria_cert_name",certName.trim())}catch(e){} setCertGenerated(true);}}}
                         style={{padding:"10px 24px",background: certName.trim()?"#ffd700":"#333",color:certName.trim()?"#0a0a0f":"#666",border:"none",borderRadius:4,fontWeight:700,cursor:certName.trim()?"pointer":"default",fontFamily:"inherit",fontSize:13,transition:"all 0.2s"}}>
                         GENERA CERTIFICATO
                       </button>
@@ -682,7 +687,6 @@ function BiometriaQuiz() {
                       <p style={{fontSize:9,color:"#444",marginTop:16}}>{new Date().toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"})}</p>
                     </div>
                     <div style={{textAlign:"center",padding:"0 20px 20px"}}>
-                      <p style={{fontSize:10,color:"#555",marginBottom:12}}>Fai uno screenshot per conservarlo!</p>
                       <button onClick={() => setShowCert(false)}
                         style={{padding:"10px 24px",background:"transparent",color:"#ffd700",border:"1px solid #ffd700",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>
                         CHIUDI
