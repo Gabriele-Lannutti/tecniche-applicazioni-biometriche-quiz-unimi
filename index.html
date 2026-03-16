@@ -313,6 +313,9 @@ function BiometriaQuiz() {
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isRipasso, setIsRipasso] = useState(false);
   const [ripassoCount, setRipassoCount] = useState(0);
+  const [masteredCount, setMasteredCount] = useState(0);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showResetFinal, setShowResetFinal] = useState(false);
   const timerRef = useRef(null);
 
   // localStorage helpers for ripasso
@@ -327,7 +330,6 @@ function BiometriaQuiz() {
   };
   const addToRipasso = (questionText) => {
     const s = getRipassoSet();
-    // Find the original index in QUESTIONS by matching q text
     const idx = QUESTIONS.findIndex(q => q.q === questionText);
     if (idx !== -1) { s.add(idx); saveRipassoSet(s); }
   };
@@ -337,10 +339,39 @@ function BiometriaQuiz() {
     if (idx !== -1) { s.delete(idx); saveRipassoSet(s); }
   };
 
-  // Update ripasso count on mount and when returning to menu
+  // localStorage helpers for mastered (250/250 counter)
+  const getMasteredSet = () => {
+    try {
+      const raw = localStorage.getItem("biometria_mastered");
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch(e) { return new Set(); }
+  };
+  const saveMasteredSet = (s) => {
+    try { localStorage.setItem("biometria_mastered", JSON.stringify([...s])); } catch(e) {}
+  };
+  const addToMastered = (questionText) => {
+    const s = getMasteredSet();
+    const idx = QUESTIONS.findIndex(q => q.q === questionText);
+    if (idx !== -1) { s.add(idx); saveMasteredSet(s); }
+  };
+
+  // Reset all progress
+  const resetAllProgress = () => {
+    try {
+      localStorage.removeItem("biometria_ripasso");
+      localStorage.removeItem("biometria_mastered");
+    } catch(e) {}
+    setRipassoCount(0);
+    setMasteredCount(0);
+    setShowResetFinal(false);
+    setShowResetConfirm(false);
+  };
+
+  // Update counts on mount and when returning to menu
   useEffect(() => {
     if (mode === "menu") {
       setRipassoCount(getRipassoSet().size);
+      setMasteredCount(getMasteredSet().size);
     }
   }, [mode]);
 
@@ -403,11 +434,10 @@ function BiometriaQuiz() {
     const q = questions[current];
     if (selected === q.ans) {
       setScore(s => s + 1);
-      // If in ripasso mode, remove from ripasso set on correct answer
       if (isRipasso) removeFromRipasso(q.q);
+      addToMastered(q.q);
     } else {
       setWrong(w => [...w, { ...q, userAns: selected }]);
-      // Always add wrong answers to ripasso set
       addToRipasso(q.q);
     }
   };
@@ -475,6 +505,50 @@ function BiometriaQuiz() {
             )}
           </div>
           <p style={{color:"#333",fontSize:10,marginTop:16}}>{QUESTIONS.length} domande totali nel database</p>
+
+          {/* Progress counter */}
+          <div style={{marginTop:20,padding:"12px 16px",background:"#111118",borderRadius:6,border:"1px solid #222"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+              <span style={{fontSize:11,color:"#888"}}>Domande conquistate</span>
+              <span style={{fontSize:13,fontWeight:900,color: masteredCount >= 250 ? "#00ff88" : masteredCount >= 188 ? "#44aaff" : masteredCount >= 125 ? "#ff8800" : "#ff4444"}}>{masteredCount}/{QUESTIONS.length}</span>
+            </div>
+            <div style={{height:6,background:"#1a1a2e",borderRadius:3,overflow:"hidden"}}>
+              <div style={{height:"100%",borderRadius:3,transition:"width 0.5s ease",width:`${(masteredCount/QUESTIONS.length)*100}%`,background: masteredCount >= 250 ? "#00ff88" : masteredCount >= 188 ? "#44aaff" : masteredCount >= 125 ? "#ff8800" : "#ff4444"}}/>
+            </div>
+          </div>
+
+          {/* Reset — ghost button, very discreet */}
+          {masteredCount > 0 && (
+            <p onClick={() => setShowResetConfirm(true)} style={{color:"#2a2a2a",fontSize:9,marginTop:12,cursor:"pointer",transition:"color 0.2s"}} onMouseEnter={e=>e.target.style.color="#555"} onMouseLeave={e=>e.target.style.color="#2a2a2a"}>Reset progresso</p>
+          )}
+
+          {/* Reset confirm — step 1 */}
+          {showResetConfirm && !showResetFinal && (
+            <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <div style={{background:"#1a1a2e",border:"1px solid #ff4444",borderRadius:8,padding:24,textAlign:"center",maxWidth:340}}>
+                <p style={{fontSize:13,marginBottom:6,color:"#ff8888",fontWeight:700}}>Attenzione</p>
+                <p style={{fontSize:12,marginBottom:16,color:"#ccc"}}>Stai per cancellare tutto il progresso: domande conquistate e domande da ripassare. Questa azione è irreversibile.</p>
+                <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+                  <button onClick={() => setShowResetFinal(true)} style={{padding:"8px 20px",background:"#ff4444",color:"#000",border:"none",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>CONTINUA</button>
+                  <button onClick={() => {setShowResetConfirm(false);setShowResetFinal(false);}} style={{padding:"8px 20px",background:"transparent",color:"#44aaff",border:"1px solid #44aaff",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>ANNULLA</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Reset confirm — step 2 (final) */}
+          {showResetConfirm && showResetFinal && (
+            <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <div style={{background:"#1a1a2e",border:"1px solid #ff4444",borderRadius:8,padding:24,textAlign:"center",maxWidth:340}}>
+                <p style={{fontSize:13,marginBottom:6,color:"#ff4444",fontWeight:700}}>Sei davvero sicuro?</p>
+                <p style={{fontSize:12,marginBottom:16,color:"#ccc"}}>Perderai {masteredCount} domande conquistate e {ripassoCount} domande nel ripasso. Non si può tornare indietro.</p>
+                <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+                  <button onClick={resetAllProgress} style={{padding:"8px 20px",background:"#ff4444",color:"#000",border:"none",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>SÌ, CANCELLA TUTTO</button>
+                  <button onClick={() => {setShowResetConfirm(false);setShowResetFinal(false);}} style={{padding:"8px 20px",background:"transparent",color:"#44aaff",border:"1px solid #44aaff",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>ANNULLA</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
