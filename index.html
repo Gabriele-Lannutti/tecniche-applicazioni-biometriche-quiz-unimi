@@ -613,7 +613,8 @@ function BiometriaQuiz() {
             {(() => {
               const unconqueredCount = QUESTIONS.length - masteredCount;
               const showConquista = unconqueredCount > 0;
-              const conquistaLabel = "DOMANDE DA CONQUISTARE (" + unconqueredCount + ")";
+              const shownCount = Math.min(20, unconqueredCount);
+              const conquistaLabel = "DOMANDE NUOVE (" + shownCount + (shownCount === 1 ? " domanda non ancora uscita)" : " domande non ancora uscite)");
               const buttons = [
                 {label:"SIMULAZIONE ESAME (40 domande, 60 min, voto)",action:()=>startQuiz(40,true),color:"#ff4444"},
                 showConquista
