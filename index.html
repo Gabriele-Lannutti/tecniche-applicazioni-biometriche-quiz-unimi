@@ -690,7 +690,7 @@ function BiometriaQuiz() {
             <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
               <div style={{background:"#1a1a2e",border:"1px solid #ff4444",borderRadius:8,padding:24,textAlign:"center",maxWidth:340}}>
                 <p style={{fontSize:13,marginBottom:6,color:"#ff8888",fontWeight:700}}>Attenzione</p>
-                <p style={{fontSize:12,marginBottom:16,color:"#ccc"}}>Stai per cancellare tutto il progresso: domande conquistate e domande da ripassare. Questa azione è irreversibile.</p>
+                <p style={{fontSize:12,marginBottom:16,color:"#ccc"}}>Stai per cancellare tutto il progresso: domande conquistate, domande da ripassare, streak attuale e record streak. Questa azione è irreversibile.</p>
                 <div style={{display:"flex",gap:10,justifyContent:"center"}}>
                   <button onClick={() => setShowResetFinal(true)} style={{padding:"8px 20px",background:"#ff4444",color:"#000",border:"none",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>CONTINUA</button>
                   <button onClick={() => {setShowResetConfirm(false);setShowResetFinal(false);}} style={{padding:"8px 20px",background:"transparent",color:"#44aaff",border:"1px solid #44aaff",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>ANNULLA</button>
@@ -704,7 +704,7 @@ function BiometriaQuiz() {
             <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
               <div style={{background:"#1a1a2e",border:"1px solid #ff4444",borderRadius:8,padding:24,textAlign:"center",maxWidth:340}}>
                 <p style={{fontSize:13,marginBottom:6,color:"#ff4444",fontWeight:700}}>Sei davvero sicuro?</p>
-                <p style={{fontSize:12,marginBottom:16,color:"#ccc"}}>Perderai {masteredCount} domande conquistate e {ripassoCount} domande nel ripasso. Non si può tornare indietro.</p>
+                <p style={{fontSize:12,marginBottom:16,color:"#ccc"}}>Perderai {masteredCount} domande conquistate, {ripassoCount} domande nel ripasso e il tuo record streak di {bestStreak}. Non si può tornare indietro.</p>
                 <div style={{display:"flex",gap:10,justifyContent:"center"}}>
                   <button onClick={resetAllProgress} style={{padding:"8px 20px",background:"#ff4444",color:"#000",border:"none",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>SÌ, CANCELLA TUTTO</button>
                   <button onClick={() => {setShowResetConfirm(false);setShowResetFinal(false);}} style={{padding:"8px 20px",background:"transparent",color:"#44aaff",border:"1px solid #44aaff",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>ANNULLA</button>
