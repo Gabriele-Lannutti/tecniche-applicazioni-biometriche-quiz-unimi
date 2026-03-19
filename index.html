@@ -600,7 +600,7 @@ function BiometriaQuiz() {
   };
 
   const handleExit = () => setShowExitConfirm(true);
-  const confirmExit = () => { clearInterval(timerRef.current); setMode("menu"); setShowExitConfirm(false); };
+  const confirmExit = () => { clearInterval(timerRef.current); resetStreak(); setMode("menu"); setShowExitConfirm(false); };
   const cancelExit = () => setShowExitConfirm(false);
 
   const formatTime = (s) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,"0")}`;
@@ -862,7 +862,7 @@ function BiometriaQuiz() {
       {showExitConfirm && (
         <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
           <div style={{background:T.cardBg,border:"1px solid #ff4444",borderRadius:8,padding:24,textAlign:"center",maxWidth:340}}>
-            <p style={{fontSize:14,marginBottom:16,color:T.text}}>Vuoi davvero abbandonare il test?<br/>Il progresso verrà perso.</p>
+            <p style={{fontSize:14,marginBottom:16,color:T.text}}>Vuoi davvero abbandonare il test?<br/>Il progresso verrà perso e la streak attuale sarà azzerata.</p>
             <div style={{display:"flex",gap:10,justifyContent:"center"}}>
               <button onClick={confirmExit} style={{padding:"8px 20px",background:"#ff4444",color:"#000",border:"none",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>SÌ, ESCI</button>
               <button onClick={cancelExit} style={{padding:"8px 20px",background:"transparent",color:"#44aaff",border:"1px solid #44aaff",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>ANNULLA</button>
