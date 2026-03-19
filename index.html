@@ -8,7 +8,7 @@
   <title>Super Test Biometria</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { background: #0a0a0f; overflow-x: hidden; }
+    body { background: #0a0a0f; overflow-x: hidden; transition: background 0.3s; }
     #root { min-height: 100vh; min-height: 100dvh; }
     @keyframes confetti-fall {
       0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
@@ -336,6 +336,24 @@ const LETTERS = ["A", "B", "C", "D", "E"];
 
 function BiometriaQuiz() {
   const [mode, setMode] = useState("menu");
+  const [darkMode, setDarkMode] = useState(() => {
+    try { return localStorage.getItem("biometria_theme") !== "light"; } catch(e) { return true; }
+  });
+  const toggleTheme = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    try { localStorage.setItem("biometria_theme", newMode ? "dark" : "light"); } catch(e) {}
+  };
+  // Theme colors
+  const T = darkMode ? {
+    bg:"#0a0a0f", text:"#e0e0e0", textSoft:"#ccc", textMuted:"#888", textFaint:"#555",
+    cardBg:"#1a1a2e", cardBg2:"#111118", cardBg3:"#111122", border:"#222", borderLight:"#333",
+    inputBg:"#111118"
+  } : {
+    bg:"#f5f5f7", text:"#1a1a2e", textSoft:"#333", textMuted:"#666", textFaint:"#999",
+    cardBg:"#ffffff", cardBg2:"#f0f0f5", cardBg3:"#e8e8f0", border:"#ddd", borderLight:"#ccc",
+    inputBg:"#ffffff"
+  };
   const [questions, setQuestions] = useState([]);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState(null);
@@ -492,7 +510,7 @@ function BiometriaQuiz() {
     setElapsed(0);
     setIsSimulation(sim);
     setIsRipasso(false);
-    setTimeLimit(sim ? 3600 : null);
+    setTimeLimit(sim ? 2400 : null);
     setShowExitConfirm(false);
     setMode("quiz");
   };
@@ -543,7 +561,7 @@ function BiometriaQuiz() {
       timerRef.current = setInterval(() => {
         const e = Math.floor((Date.now() - startTime) / 1000);
         setElapsed(e);
-        if (isSimulation && e >= 3600) {
+        if (isSimulation && e >= 2400) {
           clearInterval(timerRef.current);
           setMode("results");
         }
@@ -552,7 +570,7 @@ function BiometriaQuiz() {
     return () => clearInterval(timerRef.current);
   }, [mode, startTime, isSimulation]);
 
-  const handleSelect = (idx) => { if (!revealed) setSelected(idx); };
+  const handleSelect = (idx) => { if (!revealed) setSelected(prev => prev === idx ? null : idx); };
 
   const handleConfirm = () => {
     if (selected === null) return;
@@ -586,7 +604,7 @@ function BiometriaQuiz() {
   const cancelExit = () => setShowExitConfirm(false);
 
   const formatTime = (s) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,"0")}`;
-  const formatCountdown = (s) => { const r = Math.max(0, 3600 - s); return formatTime(r); };
+  const formatCountdown = (s) => { const r = Math.max(0, 2400 - s); return formatTime(r); };
 
   const calcGrade = (sc, tot) => {
     if (!isSimulation) return null;
@@ -603,12 +621,16 @@ function BiometriaQuiz() {
   // MENU
   if (mode === "menu") {
     return (
-      <div style={{minHeight:"100vh",background:"#0a0a0f",color:"#e0e0e0",fontFamily:"'JetBrains Mono','Fira Code',monospace",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20}}>
-        <div style={{textAlign:"center",maxWidth:550}}>
+      <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'JetBrains Mono','Fira Code',monospace",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20}}>
+        <div style={{textAlign:"center",maxWidth:550,width:"100%"}}>
+          <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+            <button onClick={toggleTheme} style={{background:"transparent",border:"none",fontSize:20,cursor:"pointer",padding:4}} title={darkMode?"Modalità giorno":"Modalità notte"}>
+              {darkMode ? "☀️" : "🌙"}
+            </button>
+          </div>
           <h1 style={{fontSize:24,color:"#ff4444",marginBottom:4,letterSpacing:2}}>SUPER TEST DI TECNICHE E</h1>
           <h1 style={{fontSize:24,color:"#ff4444",marginTop:0,letterSpacing:2}}>APPLICAZIONI BIOMETRICHE</h1>
-          <p style={{color:"#888",fontSize:12,marginBottom:4}}>Creato da Gabriele Lannutti</p>
-          <p style={{color:"#555",fontSize:11,marginBottom:24}}>Le domande vengono mescolate ogni volta. Ripetibile all'infinito.</p>
+          <p style={{color:T.textMuted,fontSize:12,marginBottom:24}}>Creato da Gabriele Lannutti</p>
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             {(() => {
               const unconqueredCount = QUESTIONS.length - masteredCount;
@@ -616,7 +638,7 @@ function BiometriaQuiz() {
               const shownCount = Math.min(20, unconqueredCount);
               const conquistaLabel = "DOMANDE NUOVE (" + shownCount + (shownCount === 1 ? " domanda non appresa)" : " domande non apprese)");
               const buttons = [
-                {label:"SIMULAZIONE ESAME (40 domande, 60 min, voto)",action:()=>startQuiz(40,true),color:"#ff4444"},
+                {label:"SIMULAZIONE ESAME (40 domande, 40 min, voto)",action:()=>startQuiz(40,true),color:"#ff4444"},
                 showConquista
                   ? {label:conquistaLabel,action:startConquista,color:"#44aaff"}
                   : {label:"RIPASSO VELOCE (20 domande)",action:()=>startQuiz(20,false),color:"#44aaff"},
@@ -652,23 +674,23 @@ function BiometriaQuiz() {
           )}
 
           {/* Unified stats box */}
-          <div style={{marginTop:20,padding:"12px 16px",background:"#111118",borderRadius:6,border:"1px solid #222"}}>
+          <div style={{marginTop:20,padding:"12px 16px",background:T.cardBg2,borderRadius:6,border:`1px solid ${T.border}`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-              <span style={{fontSize:11,color:"#888"}}>Domande apprese</span>
+              <span style={{fontSize:11,color:T.textMuted}}>Domande apprese</span>
               <span style={{fontSize:13,fontWeight:900,color: masteredCount >= 250 ? "#00ff88" : masteredCount >= 188 ? "#44aaff" : masteredCount >= 125 ? "#ff8800" : "#ff4444"}}>{masteredCount}/{QUESTIONS.length}</span>
             </div>
-            <div style={{height:6,background:"#1a1a2e",borderRadius:3,overflow:"hidden",marginBottom: (streak > 0 || bestStreak > 0) ? 8 : 0}}>
+            <div style={{height:6,background:darkMode?"#1a1a2e":"#ddd",borderRadius:3,overflow:"hidden",marginBottom: (streak > 0 || bestStreak > 0) ? 8 : 0}}>
               <div style={{height:"100%",borderRadius:3,transition:"width 0.5s ease",width:`${(masteredCount/QUESTIONS.length)*100}%`,background: masteredCount >= 250 ? "#00ff88" : masteredCount >= 188 ? "#44aaff" : masteredCount >= 125 ? "#ff8800" : "#ff4444"}}/>
             </div>
             {streak > 0 && (
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom: bestStreak > 0 ? 4 : 0}}>
-                <span style={{fontSize:11,color:"#888"}}>Streak attuale</span>
+                <span style={{fontSize:11,color:T.textMuted}}>Streak attuale</span>
                 <span style={{fontSize:12,fontWeight:700,color:"#ff8800"}}>{getStreakFires(streak)} {streak}</span>
               </div>
             )}
             {bestStreak > 0 && (
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <span style={{fontSize:11,color:"#888"}}>Miglior streak</span>
+                <span style={{fontSize:11,color:T.textMuted}}>Miglior streak</span>
                 <span style={{fontSize:12,fontWeight:700,color:"#ffd700"}}>{getStreakFires(bestStreak)} {bestStreak}</span>
               </div>
             )}
@@ -676,15 +698,15 @@ function BiometriaQuiz() {
 
           {/* Reset — ghost button, very discreet */}
           {masteredCount > 0 && (
-            <p onClick={() => setShowResetConfirm(true)} style={{color:"#2a2a2a",fontSize:9,marginTop:12,cursor:"pointer",transition:"color 0.2s"}} onMouseEnter={e=>e.target.style.color="#555"} onMouseLeave={e=>e.target.style.color="#2a2a2a"}>Reset progresso</p>
+            <p onClick={() => setShowResetConfirm(true)} style={{color:darkMode?"#2a2a2a":"#ccc",fontSize:9,marginTop:12,cursor:"pointer",transition:"color 0.2s"}} onMouseEnter={e=>e.target.style.color=darkMode?"#555":"#888"} onMouseLeave={e=>e.target.style.color=darkMode?"#2a2a2a":"#ccc"}>Reset progresso</p>
           )}
 
           {/* Reset confirm — step 1 */}
           {showResetConfirm && !showResetFinal && (
             <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <div style={{background:"#1a1a2e",border:"1px solid #ff4444",borderRadius:8,padding:24,textAlign:"center",maxWidth:340}}>
+              <div style={{background:T.cardBg,border:"1px solid #ff4444",borderRadius:8,padding:24,textAlign:"center",maxWidth:340}}>
                 <p style={{fontSize:13,marginBottom:6,color:"#ff8888",fontWeight:700}}>Attenzione</p>
-                <p style={{fontSize:12,marginBottom:16,color:"#ccc"}}>Stai per cancellare tutto il progresso: domande apprese, domande da ripassare, streak attuale e record streak. Questa azione è irreversibile.</p>
+                <p style={{fontSize:12,marginBottom:16,color:T.textSoft}}>Stai per cancellare tutto il progresso: domande apprese, domande da ripassare, streak attuale e record streak. Questa azione è irreversibile.</p>
                 <div style={{display:"flex",gap:10,justifyContent:"center"}}>
                   <button onClick={() => setShowResetFinal(true)} style={{padding:"8px 20px",background:"#ff4444",color:"#000",border:"none",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>CONTINUA</button>
                   <button onClick={() => {setShowResetConfirm(false);setShowResetFinal(false);}} style={{padding:"8px 20px",background:"transparent",color:"#44aaff",border:"1px solid #44aaff",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>ANNULLA</button>
@@ -696,9 +718,9 @@ function BiometriaQuiz() {
           {/* Reset confirm — step 2 (final) */}
           {showResetConfirm && showResetFinal && (
             <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <div style={{background:"#1a1a2e",border:"1px solid #ff4444",borderRadius:8,padding:24,textAlign:"center",maxWidth:340}}>
+              <div style={{background:T.cardBg,border:"1px solid #ff4444",borderRadius:8,padding:24,textAlign:"center",maxWidth:340}}>
                 <p style={{fontSize:13,marginBottom:6,color:"#ff4444",fontWeight:700}}>Sei davvero sicuro?</p>
-                <p style={{fontSize:12,marginBottom:16,color:"#ccc"}}>Perderai {masteredCount} domande apprese, {ripassoCount} domande nel ripasso e il tuo record streak di {bestStreak}. Non si può tornare indietro.</p>
+                <p style={{fontSize:12,marginBottom:16,color:T.textSoft}}>Perderai {masteredCount} domande apprese, {ripassoCount} domande nel ripasso e il tuo record streak di {bestStreak}. Non si può tornare indietro.</p>
                 <div style={{display:"flex",gap:10,justifyContent:"center"}}>
                   <button onClick={resetAllProgress} style={{padding:"8px 20px",background:"#ff4444",color:"#000",border:"none",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>SÌ, CANCELLA TUTTO</button>
                   <button onClick={() => {setShowResetConfirm(false);setShowResetFinal(false);}} style={{padding:"8px 20px",background:"transparent",color:"#44aaff",border:"1px solid #44aaff",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>ANNULLA</button>
@@ -727,18 +749,18 @@ function BiometriaQuiz() {
                 }}/>
               ))}
 
-              <div style={{background:"#0a0a0f",borderRadius:12,padding:0,maxWidth:420,width:"100%",position:"relative",zIndex:1002}}>
+              <div style={{background:T.bg,borderRadius:12,padding:0,maxWidth:420,width:"100%",position:"relative",zIndex:1002}}>
                 {!certGenerated ? (
                   <div style={{padding:32,textAlign:"center"}}>
                     <p style={{fontSize:40,marginBottom:8}}>🏆</p>
                     <h2 style={{color:"#ffd700",fontSize:20,marginBottom:8,fontFamily:"inherit"}}>HAI COMPLETATO TUTTO!</h2>
-                    <p style={{color:"#aaa",fontSize:12,marginBottom:24}}>Tutte le 250 domande apprese. Inserisci il tuo nome per generare il certificato.</p>
+                    <p style={{color:T.textMuted,fontSize:12,marginBottom:24}}>Tutte le 250 domande apprese. Inserisci il tuo nome per generare il certificato.</p>
                     <input
                       type="text"
                       value={certName}
                       onChange={e => setCertName(e.target.value)}
                       placeholder="Il tuo nome"
-                      style={{width:"100%",padding:"10px 14px",background:"#111118",border:"1px solid #333",borderRadius:4,color:"#fff",fontSize:14,fontFamily:"inherit",outline:"none",textAlign:"center",marginBottom:16}}
+                      style={{width:"100%",padding:"10px 14px",background:T.inputBg,border:`1px solid ${T.borderLight}`,borderRadius:4,color:T.text,fontSize:14,fontFamily:"inherit",outline:"none",textAlign:"center",marginBottom:16}}
                     />
                     <div style={{display:"flex",gap:10,justifyContent:"center"}}>
                       <button onClick={() => {if(certName.trim()){try{localStorage.setItem("biometria_cert_name",certName.trim())}catch(e){} setCertGenerated(true);}}}
@@ -800,26 +822,25 @@ function BiometriaQuiz() {
     const pctColor = pct>=90?"#00ff88":pct>=75?"#44aaff":pct>=60?"#ff8800":"#ff4444";
     const verdict = pct>=90?"ECCELLENTE":pct>=75?"BUONO":pct>=60?"SUFFICIENTE":"INSUFFICIENTE";
     return (
-      <div style={{minHeight:"100vh",background:"#0a0a0f",color:"#e0e0e0",fontFamily:"'JetBrains Mono',monospace",padding:20,overflowY:"auto"}}>
+      <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'JetBrains Mono',monospace",padding:20,overflowY:"auto"}}>
         <div style={{maxWidth:700,margin:"0 auto"}}>
           <h1 style={{color:pctColor,fontSize:28,textAlign:"center"}}>{verdict}</h1>
           {isSimulation && grade !== null && <p style={{textAlign:"center",fontSize:20,color:grade>=18?"#00ff88":"#ff4444",fontWeight:900}}>{gradeLabel}</p>}
           <div style={{textAlign:"center",marginBottom:20}}>
             <span style={{fontSize:44,color:pctColor,fontWeight:900}}>{score}/{questions.length}</span>
-            <span style={{color:"#888",fontSize:13,display:"block"}}>({pct}%) — Tempo: {formatTime(elapsed)}</span>
+            <span style={{color:T.textMuted,fontSize:13,display:"block"}}>({pct}%) — Tempo: {formatTime(elapsed)}</span>
           </div>
           {wrong.length>0&&(<div>
-            <h2 style={{color:"#ff4444",fontSize:15,borderBottom:"1px solid #333",paddingBottom:8}}>ERRORI DA RIPASSARE ({wrong.length})</h2>
+            <h2 style={{color:"#ff4444",fontSize:15,borderBottom:`1px solid ${T.borderLight}`,paddingBottom:8}}>ERRORI DA RIPASSARE ({wrong.length})</h2>
             {wrong.map((w,i)=>(
-              <div key={i} style={{background:"#1a1a2e",borderLeft:"3px solid #ff4444",padding:12,marginBottom:10,borderRadius:4,fontSize:11}}>
+              <div key={i} style={{background:T.cardBg,borderLeft:"3px solid #ff4444",padding:12,marginBottom:10,borderRadius:4,fontSize:11}}>
                 <p style={{color:"#ff8888",fontWeight:700,marginBottom:6}}>{w.q}</p>
-                <p style={{color:"#ff4444"}}>Tua: {LETTERS[w.userAns]}. {w.opts[w.userAns]}</p>
-                <p style={{color:"#00ff88"}}>Corretta: {LETTERS[w.ans]}. {w.opts[w.ans]}</p>
-                <p style={{color:"#888",fontStyle:"italic",marginTop:4}}>{w.expl}</p>
+                <p style={{color:"#00ff88"}}>{LETTERS[w.ans]}. {w.opts[w.ans]}</p>
+                <p style={{color:T.textMuted,fontStyle:"italic",marginTop:4}}>{w.expl}</p>
               </div>
             ))}
           </div>)}
-          <button onClick={()=>setMode("menu")} style={{display:"block",margin:"20px auto",padding:"12px 30px",background:"#ff4444",color:"#0a0a0f",border:"none",fontSize:14,fontWeight:900,cursor:"pointer",borderRadius:4,fontFamily:"inherit"}}>TORNA AL MENU</button>
+          <button onClick={()=>setMode("menu")} style={{display:"block",margin:"20px auto",padding:"12px 30px",background:"#ff4444",color:darkMode?"#0a0a0f":"#fff",border:"none",fontSize:14,fontWeight:900,cursor:"pointer",borderRadius:4,fontFamily:"inherit"}}>TORNA AL MENU</button>
         </div>
       </div>
     );
@@ -828,11 +849,11 @@ function BiometriaQuiz() {
   // QUIZ
   const q = questions[current];
   return (
-    <div style={{minHeight:"100vh",background:"#0a0a0f",color:"#e0e0e0",fontFamily:"'JetBrains Mono',monospace",display:"flex",flexDirection:"column"}}>
+    <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'JetBrains Mono',monospace",display:"flex",flexDirection:"column"}}>
       {showExitConfirm && (
         <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <div style={{background:"#1a1a2e",border:"1px solid #ff4444",borderRadius:8,padding:24,textAlign:"center",maxWidth:340}}>
-            <p style={{fontSize:14,marginBottom:16}}>Vuoi davvero abbandonare il test?<br/>Il progresso verrà perso.</p>
+          <div style={{background:T.cardBg,border:"1px solid #ff4444",borderRadius:8,padding:24,textAlign:"center",maxWidth:340}}>
+            <p style={{fontSize:14,marginBottom:16,color:T.text}}>Vuoi davvero abbandonare il test?<br/>Il progresso verrà perso.</p>
             <div style={{display:"flex",gap:10,justifyContent:"center"}}>
               <button onClick={confirmExit} style={{padding:"8px 20px",background:"#ff4444",color:"#000",border:"none",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>SÌ, ESCI</button>
               <button onClick={cancelExit} style={{padding:"8px 20px",background:"transparent",color:"#44aaff",border:"1px solid #44aaff",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>ANNULLA</button>
@@ -840,42 +861,36 @@ function BiometriaQuiz() {
           </div>
         </div>
       )}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px",borderBottom:"1px solid #222",fontSize:12}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px",borderBottom:`1px solid ${T.border}`,fontSize:12}}>
         <span style={{color:"#ff4444",fontWeight:700}}>{current+1}/{questions.length}</span>
         <div style={{display:"flex",gap:16}}>
           <span style={{color:"#00ff88"}}>✓ {score}</span>
           <span style={{color:"#ff4444"}}>✗ {wrong.length}</span>
           {streak > 0 && <span style={{color:"#ff8800"}}>{getStreakFires(streak)} {streak}</span>}
         </div>
-        <span style={{color: isSimulation && (3600-elapsed)<300 ? "#ff4444" : "#888"}}>{isSimulation ? formatCountdown(elapsed) : formatTime(elapsed)}</span>
-        <button onClick={handleExit} style={{background:"transparent",border:"1px solid #555",color:"#888",fontSize:10,padding:"4px 10px",borderRadius:3,cursor:"pointer",fontFamily:"inherit"}}>ESCI</button>
+        <span style={{color: isSimulation && (2400-elapsed)<300 ? "#ff4444" : T.textMuted}}>{isSimulation ? formatCountdown(elapsed) : formatTime(elapsed)}</span>
+        <button onClick={handleExit} style={{background:"transparent",border:`1px solid ${T.textFaint}`,color:T.textMuted,fontSize:10,padding:"4px 10px",borderRadius:3,cursor:"pointer",fontFamily:"inherit"}}>ESCI</button>
       </div>
-      <div style={{height:3,background:"#1a1a2e"}}><div style={{height:"100%",background: isSimulation?"#ff4444":"#44aaff",width:`${((current+1)/questions.length)*100}%`,transition:"width 0.3s"}}/></div>
+      <div style={{height:3,background:darkMode?"#1a1a2e":"#ddd"}}><div style={{height:"100%",background: isSimulation?"#ff4444":"#44aaff",width:`${((current+1)/questions.length)*100}%`,transition:"width 0.3s"}}/></div>
       <div style={{flex:1,display:"flex",flexDirection:"column",padding:16,maxWidth:700,margin:"0 auto",width:"100%"}}>
-        <p style={{fontSize:14,lineHeight:1.5,color:"#fff",fontWeight:600,marginBottom:20,minHeight:50}}>{q.q}</p>
+        <p style={{fontSize:14,lineHeight:1.5,color:T.text,fontWeight:600,marginBottom:20,minHeight:50}}>{q.q}</p>
         <div style={{display:"flex",flexDirection:"column",gap:8,flex:1}}>
           {q.opts.map((opt,i)=>{
-            let bg="transparent",border="#333",col="#ccc";
+            let bg="transparent",border=T.borderLight,col=T.textSoft;
             if(revealed){
-              if(i===q.ans){bg="#0a2e0a";border="#00ff88";col="#00ff88"}
-              else if(i===selected){bg="#2e0a0a";border="#ff4444";col="#ff4444"}
-            } else if(i===selected){bg="#1a1a3e";border="#44aaff";col="#44aaff"}
+              if(i===q.ans){bg=darkMode?"#0a2e0a":"#e6f9ed";border="#00ff88";col=darkMode?"#00ff88":"#007a3d"}
+              else if(i===selected){bg=darkMode?"#2e0a0a":"#fde8e8";border="#ff4444";col="#ff4444"}
+            } else if(i===selected){bg=darkMode?"#1a1a3e":"#e8eeff";border="#44aaff";col="#44aaff"}
             return(
               <button key={i} onClick={()=>handleSelect(i)}
                 style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 12px",background:bg,border:`1.5px solid ${border}`,color:col,fontSize:12,fontFamily:"inherit",cursor:revealed?"default":"pointer",borderRadius:4,textAlign:"left",lineHeight:1.4,transition:"all 0.15s"}}>
-                <span style={{fontWeight:900,minWidth:18,color:border==="#333"?"#666":col}}>{LETTERS[i]}.</span>
+                <span style={{fontWeight:900,minWidth:18,color:border===T.borderLight?T.textFaint:col}}>{LETTERS[i]}.</span>
                 <span>{opt}</span>
               </button>
             );
           })}
         </div>
-        {revealed&&(
-          <div style={{background:"#111122",border:"1px solid #333",borderRadius:4,padding:12,marginTop:12,fontSize:11,lineHeight:1.5}}>
-            <span style={{color:selected===q.ans?"#00ff88":"#ff4444",fontWeight:900}}>{selected===q.ans?"✓ CORRETTO":"✗ SBAGLIATO"}</span>
-            <p style={{color:"#aaa",marginTop:6}}>{q.expl}</p>
-          </div>
-        )}
-        {/* Streak toast — above confirm button */}
+        {/* Streak toast — above explanation */}
         {streakToast && (
           <div style={{
             display:"flex",
@@ -903,15 +918,21 @@ function BiometriaQuiz() {
             </div>
           </div>
         )}
+        {revealed&&(
+          <div style={{background:T.cardBg3,border:`1px solid ${T.borderLight}`,borderRadius:4,padding:12,marginTop:12,fontSize:11,lineHeight:1.5}}>
+            <span style={{color:selected===q.ans?"#00ff88":"#ff4444",fontWeight:900}}>{selected===q.ans?"✓ CORRETTO":"✗ SBAGLIATO"}</span>
+            <p style={{color:T.textMuted,marginTop:6}}>{q.expl}</p>
+          </div>
+        )}
         <div style={{marginTop:12,display:"flex",gap:10}}>
           {!revealed?(
             <button onClick={handleConfirm} disabled={selected===null}
-              style={{flex:1,padding:"12px",background:selected!==null?"#44aaff":"#222",color:selected!==null?"#000":"#555",border:"none",fontSize:14,fontWeight:900,cursor:selected!==null?"pointer":"default",borderRadius:4,fontFamily:"inherit",transition:"all 0.2s"}}>
+              style={{flex:1,padding:"12px",background:selected!==null?"#44aaff":(darkMode?"#222":"#ddd"),color:selected!==null?"#000":(darkMode?"#555":"#999"),border:"none",fontSize:14,fontWeight:900,cursor:selected!==null?"pointer":"default",borderRadius:4,fontFamily:"inherit",transition:"all 0.2s"}}>
               CONFERMA
             </button>
           ):(
             <button onClick={handleNext}
-              style={{flex:1,padding:"12px",background:"#ff4444",color:"#0a0a0f",border:"none",fontSize:14,fontWeight:900,cursor:"pointer",borderRadius:4,fontFamily:"inherit"}}>
+              style={{flex:1,padding:"12px",background:"#ff4444",color:darkMode?"#0a0a0f":"#fff",border:"none",fontSize:14,fontWeight:900,cursor:"pointer",borderRadius:4,fontFamily:"inherit"}}>
               {current+1>=questions.length?"VEDI RISULTATI":"PROSSIMA →"}
             </button>
           )}
