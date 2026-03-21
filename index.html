@@ -738,6 +738,27 @@ function BiometriaQuiz() {
                 </button>
               ));
             })()}
+
+            {/* Easter egg button — only when all mastered */}
+            {masteredCount >= QUESTIONS.length && !certRedeemed && (
+              <button onClick={() => {setShowCert(true);setCertGenerated(false);}}
+                style={{padding:"14px 20px",background:"transparent",border:"2px solid #c8860a",color:darkMode?"#ffd700":"#996600",fontSize:13,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s"}}
+                onMouseEnter={e=>{e.target.style.background=darkMode?"#ffd700":"#c8860a";e.target.style.color="#0a0a0f"}}
+                onMouseLeave={e=>{e.target.style.background="transparent";e.target.style.color=darkMode?"#ffd700":"#996600"}}>
+                {"🏆 HAI APPRESO TUTTO — RITIRA IL CERTIFICATO"}
+              </button>
+            )}
+
+            {/* MY SELECTION — appears after certificate is redeemed */}
+            {certRedeemed && (
+              <button onClick={() => {const sel = QUESTIONS.filter(q => q.sel); const pool = sel.length > 0 ? sel : shuffle(QUESTIONS).slice(0,100); const shuffled = shuffleOptions(shuffle(pool)); setQuestions(shuffled); setCurrent(0); setSelected(null); setRevealed(false); setScore(0); setWrong([]); setStartTime(Date.now()); setElapsed(0); setIsSimulation(false); setIsRipasso(false); setTimeLimit(null); setShowExitConfirm(false); setMode("quiz");}}
+                style={{padding:"14px 20px",background:"transparent",border:"2px solid #c8860a",color:darkMode?"#ffd700":"#996600",fontSize:13,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s"}}
+                onMouseEnter={e=>{e.target.style.background=darkMode?"#ffd700":"#c8860a";e.target.style.color="#0a0a0f"}}
+                onMouseLeave={e=>{e.target.style.background="transparent";e.target.style.color=darkMode?"#ffd700":"#996600"}}>
+                {"⭐ MY SELECTION (100 domande)"}
+              </button>
+            )}
+
             {ripassoCount > 0 && (
               <button onClick={startRipasso}
                 style={{padding:"14px 20px",background:"transparent",border:"2px solid #00cc66",color:"#00cc66",fontSize:13,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s",marginTop:4}}
@@ -747,26 +768,6 @@ function BiometriaQuiz() {
               </button>
             )}
           </div>
-
-          {/* Easter egg button — only when all mastered */}
-          {masteredCount >= QUESTIONS.length && !certRedeemed && (
-            <button onClick={() => {setShowCert(true);setCertGenerated(false);}}
-              style={{marginTop:16,padding:"14px 20px",background:"transparent",border:"2px solid #c8860a",color:darkMode?"#ffd700":"#996600",fontSize:13,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s",width:"100%"}}
-              onMouseEnter={e=>{e.target.style.background=darkMode?"#ffd700":"#c8860a";e.target.style.color="#0a0a0f"}}
-              onMouseLeave={e=>{e.target.style.background="transparent";e.target.style.color=darkMode?"#ffd700":"#996600"}}>
-              {"🏆 HAI APPRESO TUTTO — RITIRA IL CERTIFICATO"}
-            </button>
-          )}
-
-          {/* MY SELECTION — appears after certificate is redeemed */}
-          {certRedeemed && (
-            <button onClick={() => {const sel = QUESTIONS.filter(q => q.sel); const pool = sel.length > 0 ? sel : shuffle(QUESTIONS).slice(0,100); const shuffled = shuffleOptions(shuffle(pool)); setQuestions(shuffled); setCurrent(0); setSelected(null); setRevealed(false); setScore(0); setWrong([]); setStartTime(Date.now()); setElapsed(0); setIsSimulation(false); setIsRipasso(false); setTimeLimit(null); setShowExitConfirm(false); setMode("quiz");}}
-              style={{marginTop:16,padding:"14px 20px",background:"transparent",border:"2px solid #c8860a",color:darkMode?"#ffd700":"#996600",fontSize:13,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s",width:"100%"}}
-              onMouseEnter={e=>{e.target.style.background=darkMode?"#ffd700":"#c8860a";e.target.style.color="#0a0a0f"}}
-              onMouseLeave={e=>{e.target.style.background="transparent";e.target.style.color=darkMode?"#ffd700":"#996600"}}>
-              {"⭐ MY SELECTION (100 domande)"}
-            </button>
-          )}
 
           {/* Unified stats box */}
           <div style={{marginTop:20,padding:"12px 16px",background:T.cardBg2,borderRadius:6,border:`1px solid ${T.border}`}}>
