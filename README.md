@@ -1,4 +1,4 @@
-Quiz di biometria aggiornato al corso Tecniche e Applicazioni Biometriche 2025/2026.
+**Quiz di biometria aggiornato al corso Tecniche e Applicazioni Biometriche 2025/2026.**
 
 **Cosa c'è dentro:**
 * 📖 **Studio** — una sezione per ripassare velocemente la teoria
