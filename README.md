@@ -1,10 +1,4 @@
-# 🔥 Super Test Biometria 2025/2026
-
-👉 **[GIOCA SUBITO / VAI AL QUIZ](https://gabriele-lannutti.github.io/tecniche-applicazioni-biometriche-quiz-unimi/)**
-
-![Anteprima del Quiz](https://opengraph.githubassets.com/1/gabriele-lannutti/tecniche-applicazioni-biometriche-quiz-unimi)
-
-Ho rifatto il quiz di biometria, aggiornato al corso Tecniche e Applicazioni Biometriche 2025/2026.
+Quiz di biometria aggiornato al corso Tecniche e Applicazioni Biometriche 2025/2026.
 
 **Cosa c'è dentro:**
 * 📖 **Studio** — una sezione per ripassare velocemente la teoria
