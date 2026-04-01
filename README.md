@@ -15,3 +15,4 @@ Alcune domande riportano "dalla simulazione del prof" nella spiegazione, poichè
 C'è una barra di avanzamento che incrementa ogni volta che una domanda unica viene risposta correttamente almeno una volta, più la streak attuale e quella migliore, create apposta per dopaminmaxare i brainrottati di tiktok e mantenere alta la loro attenzione 😇
 
 Se trovate errori o avete suggerimenti su argomenti o domande fatemi sapere!
+Link al quiz: https://gabriele-lannutti.github.io/tecniche-applicazioni-biometriche-quiz-unimi/
