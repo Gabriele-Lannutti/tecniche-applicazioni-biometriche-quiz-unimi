@@ -1,5 +1,4 @@
-# tecniche-applicazioni-biometriche-quiz-unimi
-Quiz di biometria, aggiornato al corso Tecniche e Applicazioni Biometriche 2025/2026.
+Ho rifatto il quiz di biometria, aggiornato al corso Tecniche e Applicazioni Biometriche 2025/2026.
 Cosa c'è dentro:
 📖 Studio — una sezione per ripassare velocemente la teoria
 🎯 Simulazione esame — uguale a come sarà strutturato l'esame, ovvero 40 domande da svolgere in 40 minuti
