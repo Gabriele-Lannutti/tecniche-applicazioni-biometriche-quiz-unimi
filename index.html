@@ -966,7 +966,7 @@ function BiometriaQuiz() {
             <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
               <div style={{background:T.cardBg,border:"1px solid #ff4444",borderRadius:8,padding:24,textAlign:"center",maxWidth:340}}>
                 <p style={{fontSize:13,marginBottom:6,color:"#ff8888",fontWeight:700}}>Attenzione</p>
-                <p style={{fontSize:12,marginBottom:16,color:T.textSoft}}>Stai per cancellare tutto il progresso: domande apprese, domande da ripassare, streak attuale e record streak. Questa azione è irreversibile.</p>
+                <p style={{fontSize:12,marginBottom:16,color:T.textSoft}}>Stai per cancellare tutto il progresso: domande apprese, domande da ripassare, domande salvate, streak attuale e record streak. Questa azione è irreversibile.</p>
                 <div style={{display:"flex",gap:10,justifyContent:"center"}}>
                   <button onClick={() => setShowResetFinal(true)} style={{padding:"8px 20px",background:"#ff4444",color:"#000",border:"none",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>CONTINUA</button>
                   <button onClick={() => {setShowResetConfirm(false);setShowResetFinal(false);}} style={{padding:"8px 20px",background:"transparent",color:"#44aaff",border:"1px solid #44aaff",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>ANNULLA</button>
@@ -1113,7 +1113,7 @@ function BiometriaQuiz() {
             const savedQs = [...savedSet].map(i => QUESTIONS[i]).filter(Boolean);
             if (savedQs.length === 0) return null;
             return (
-              <details key="saved-category" style={{marginBottom:8}} open>
+              <details key="saved-category" style={{marginBottom:8}}>
                 <summary style={{cursor:"pointer",padding:"10px 14px",background:T.cardBg,border:"2px solid #ff7733",borderRadius:4,fontSize:12,fontWeight:700,color:"#ff7733",listStyle:"none",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <span style={{display:"flex",alignItems:"center",gap:8}}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="#ff7733" xmlns="http://www.w3.org/2000/svg">
@@ -1244,12 +1244,11 @@ function BiometriaQuiz() {
         {/* Bandierina SALVA — sotto le opzioni, allineata a destra */}
         <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
           <button onClick={() => toggleSaved(q.q)}
-            style={{background:"transparent",border:"none",cursor:"pointer",padding:6,color:currentQuestionSaved?"#ff7733":T.textFaint,transition:"color 0.2s",display:"flex",alignItems:"center",gap:6,fontSize:11,fontFamily:"inherit",fontWeight:700}}
+            style={{background:"transparent",border:"none",cursor:"pointer",padding:6,color:currentQuestionSaved?"#ff7733":T.textFaint,transition:"color 0.2s",display:"flex",alignItems:"center"}}
             title={currentQuestionSaved?"Rimuovi dalle salvate":"Salva questa domanda"}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill={currentQuestionSaved?"#ff7733":"none"} xmlns="http://www.w3.org/2000/svg">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill={currentQuestionSaved?"#ff7733":"none"} xmlns="http://www.w3.org/2000/svg">
               <path d="M4 2h16v20l-8-5-8 5V2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <span>{currentQuestionSaved?"SALVATA":"SALVA"}</span>
           </button>
         </div>
         {/* Streak toast — above explanation */}
