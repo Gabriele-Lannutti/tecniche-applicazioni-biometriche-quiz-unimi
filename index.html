@@ -467,6 +467,9 @@ function BiometriaQuiz() {
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isRipasso, setIsRipasso] = useState(false);
   const [ripassoCount, setRipassoCount] = useState(0);
+  const [savedCount, setSavedCount] = useState(0);
+  const [isSaved, setIsSaved] = useState(false);
+  const [currentQuestionSaved, setCurrentQuestionSaved] = useState(false);
   const [masteredCount, setMasteredCount] = useState(0);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showResetFinal, setShowResetFinal] = useState(false);
@@ -557,6 +560,36 @@ function BiometriaQuiz() {
     if (idx !== -1) { s.delete(idx); saveRipassoSet(s); }
   };
 
+  // localStorage helpers for saved (bookmark)
+  const getSavedSet = () => {
+    try {
+      const raw = localStorage.getItem("biometria_saved");
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch(e) { return new Set(); }
+  };
+  const saveSavedSet = (s) => {
+    try { localStorage.setItem("biometria_saved", JSON.stringify([...s])); } catch(e) {}
+  };
+  const isQuestionSaved = (questionText) => {
+    const s = getSavedSet();
+    const idx = QUESTIONS.findIndex(q => q.q === questionText);
+    return idx !== -1 && s.has(idx);
+  };
+  const toggleSaved = (questionText) => {
+    const s = getSavedSet();
+    const idx = QUESTIONS.findIndex(q => q.q === questionText);
+    if (idx === -1) return;
+    if (s.has(idx)) {
+      s.delete(idx);
+      setCurrentQuestionSaved(false);
+    } else {
+      s.add(idx);
+      setCurrentQuestionSaved(true);
+    }
+    saveSavedSet(s);
+    setSavedCount(s.size);
+  };
+
   // localStorage helpers for mastered (progress counter)
   const getMasteredSet = () => {
     try {
@@ -578,12 +611,14 @@ function BiometriaQuiz() {
     try {
       localStorage.removeItem("biometria_ripasso");
       localStorage.removeItem("biometria_mastered");
+      localStorage.removeItem("biometria_saved");
       localStorage.removeItem("biometria_cert_name");
       localStorage.removeItem("biometria_streak_current");
       localStorage.removeItem("biometria_streak_best");
     } catch(e) {}
     setRipassoCount(0);
     setMasteredCount(0);
+    setSavedCount(0);
     setCertName("");
     setStreak(0);
     setBestStreak(0);
@@ -597,6 +632,7 @@ function BiometriaQuiz() {
     if (mode === "menu") {
       setRipassoCount(getRipassoSet().size);
       setMasteredCount(getMasteredSet().size);
+      setSavedCount(getSavedSet().size);
     }
   }, [mode]);
 
@@ -611,7 +647,7 @@ function BiometriaQuiz() {
     setStartTime(Date.now());
     setElapsed(0);
     setIsSimulation(sim);
-    setIsRipasso(false);
+    setIsRipasso(false); setIsSaved(false);
     setTimeLimit(sim ? 2400 : null);
     setShowExitConfirm(false);
     setMode("quiz");
@@ -652,11 +688,38 @@ function BiometriaQuiz() {
     setStartTime(Date.now());
     setElapsed(0);
     setIsSimulation(false);
-    setIsRipasso(false);
+    setIsRipasso(false); setIsSaved(false);
     setTimeLimit(null);
     setShowExitConfirm(false);
     setMode("quiz");
   };
+
+  const startSaved = () => {
+    const savedSet = getSavedSet();
+    if (savedSet.size === 0) return;
+    const savedQuestions = [...savedSet].map(i => QUESTIONS[i]).filter(Boolean);
+    const shuffled = shuffleOptions(shuffle(savedQuestions));
+    setQuestions(shuffled);
+    setCurrent(0);
+    setSelected(null);
+    setRevealed(false);
+    setScore(0);
+    setWrong([]);
+    setStartTime(Date.now());
+    setElapsed(0);
+    setIsSimulation(false);
+    setIsRipasso(false); setIsSaved(true);
+    setTimeLimit(null);
+    setShowExitConfirm(false);
+    setMode("quiz");
+  };
+
+  // Sync currentQuestionSaved with the current question
+  useEffect(() => {
+    if (mode === "quiz" && questions[current]) {
+      setCurrentQuestionSaved(isQuestionSaved(questions[current].q));
+    }
+  }, [mode, current, questions]);
 
   useEffect(() => {
     if (mode === "quiz") {
@@ -827,7 +890,7 @@ function BiometriaQuiz() {
 
             {/* MY SELECTION — appears after certificate is redeemed */}
             {certRedeemed && (
-              <button onClick={() => {const sel = QUESTIONS.filter(q => q.sel); const pool = sel.length > 0 ? sel : shuffle(QUESTIONS).slice(0,100); const shuffled = shuffleOptions(shuffle(pool)); setQuestions(shuffled); setCurrent(0); setSelected(null); setRevealed(false); setScore(0); setWrong([]); setStartTime(Date.now()); setElapsed(0); setIsSimulation(false); setIsRipasso(false); setTimeLimit(null); setShowExitConfirm(false); setMode("quiz");}}
+              <button onClick={() => {const sel = QUESTIONS.filter(q => q.sel); const pool = sel.length > 0 ? sel : shuffle(QUESTIONS).slice(0,100); const shuffled = shuffleOptions(shuffle(pool)); setQuestions(shuffled); setCurrent(0); setSelected(null); setRevealed(false); setScore(0); setWrong([]); setStartTime(Date.now()); setElapsed(0); setIsSimulation(false); setIsRipasso(false); setIsSaved(false); setTimeLimit(null); setShowExitConfirm(false); setMode("quiz");}}
                 style={{padding:"14px 20px",background:"transparent",border:"2px solid #c8860a",color:darkMode?"#ffd700":"#996600",fontSize:13,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s"}}
                 onMouseEnter={e=>{e.target.style.background=darkMode?"#ffd700":"#c8860a";e.target.style.color="#0a0a0f"}}
                 onMouseLeave={e=>{e.target.style.background="transparent";e.target.style.color=darkMode?"#ffd700":"#996600"}}>
@@ -835,12 +898,37 @@ function BiometriaQuiz() {
               </button>
             )}
 
-            {ripassoCount > 0 && (
+            {/* RIPASSO + SALVATE — layout dinamico */}
+            {ripassoCount > 0 && savedCount > 0 && (
+              <div style={{display:"flex",gap:8,marginTop:4}}>
+                <button onClick={startRipasso}
+                  style={{flex:1,padding:"14px 12px",background:"transparent",border:"2px solid #00cc66",color:"#00cc66",fontSize:12,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.background="#00cc66";e.currentTarget.style.color="#0a0a0f"}}
+                  onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#00cc66"}}>
+                  {"RIPASSO (" + ripassoCount + ")"}
+                </button>
+                <button onClick={startSaved}
+                  style={{flex:1,padding:"14px 12px",background:"transparent",border:"2px solid #ff7733",color:"#ff7733",fontSize:12,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.background="#ff7733";e.currentTarget.style.color="#0a0a0f"}}
+                  onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#ff7733"}}>
+                  {"SALVATE (" + savedCount + ")"}
+                </button>
+              </div>
+            )}
+            {ripassoCount > 0 && savedCount === 0 && (
               <button onClick={startRipasso}
                 style={{padding:"14px 20px",background:"transparent",border:"2px solid #00cc66",color:"#00cc66",fontSize:13,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s",marginTop:4}}
-                onMouseEnter={e=>{e.target.style.background="#00cc66";e.target.style.color="#0a0a0f"}}
-                onMouseLeave={e=>{e.target.style.background="transparent";e.target.style.color="#00cc66"}}>
+                onMouseEnter={e=>{e.currentTarget.style.background="#00cc66";e.currentTarget.style.color="#0a0a0f"}}
+                onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#00cc66"}}>
                 {"RIPASSO (" + ripassoCount + " domande da rivedere)"}
+              </button>
+            )}
+            {ripassoCount === 0 && savedCount > 0 && (
+              <button onClick={startSaved}
+                style={{padding:"14px 20px",background:"transparent",border:"2px solid #ff7733",color:"#ff7733",fontSize:13,fontFamily:"inherit",cursor:"pointer",borderRadius:4,fontWeight:700,transition:"all 0.2s",marginTop:4}}
+                onMouseEnter={e=>{e.currentTarget.style.background="#ff7733";e.currentTarget.style.color="#0a0a0f"}}
+                onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#ff7733"}}>
+                {"SALVATE (" + savedCount + " domande flaggate)"}
               </button>
             )}
           </div>
@@ -892,7 +980,7 @@ function BiometriaQuiz() {
             <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
               <div style={{background:T.cardBg,border:"1px solid #ff4444",borderRadius:8,padding:24,textAlign:"center",maxWidth:340}}>
                 <p style={{fontSize:13,marginBottom:6,color:"#ff4444",fontWeight:700}}>Sei davvero sicuro?</p>
-                <p style={{fontSize:12,marginBottom:16,color:T.textSoft}}>Perderai {masteredCount} domande apprese, {ripassoCount} domande nel ripasso e il tuo record streak di {bestStreak}. Non si può tornare indietro.</p>
+                <p style={{fontSize:12,marginBottom:16,color:T.textSoft}}>Perderai {masteredCount} domande apprese, {ripassoCount} domande nel ripasso, {savedCount} domande salvate e il tuo record streak di {bestStreak}. Non si può tornare indietro.</p>
                 <div style={{display:"flex",gap:10,justifyContent:"center"}}>
                   <button onClick={resetAllProgress} style={{padding:"8px 20px",background:"#ff4444",color:"#000",border:"none",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>SÌ, CANCELLA TUTTO</button>
                   <button onClick={() => {setShowResetConfirm(false);setShowResetFinal(false);}} style={{padding:"8px 20px",background:"transparent",color:"#44aaff",border:"1px solid #44aaff",borderRadius:4,fontWeight:700,cursor:"pointer",fontFamily:"inherit",fontSize:12}}>ANNULLA</button>
@@ -1020,6 +1108,33 @@ function BiometriaQuiz() {
             <button onClick={()=>setMode("menu")} style={{background:"transparent",border:"1px solid "+T.border,color:T.textMuted,fontSize:11,padding:"6px 14px",borderRadius:4,cursor:"pointer",fontFamily:"inherit",fontWeight:700}}>TORNA AL MENU</button>
           </div>
           <p style={{color:T.textMuted,fontSize:11,marginBottom:20}}>{QUESTIONS.length} domande organizzate in {CAT_ORDER.length} categorie. Tocca una categoria per espanderla.</p>
+          {(() => {
+            const savedSet = getSavedSet();
+            const savedQs = [...savedSet].map(i => QUESTIONS[i]).filter(Boolean);
+            if (savedQs.length === 0) return null;
+            return (
+              <details key="saved-category" style={{marginBottom:8}} open>
+                <summary style={{cursor:"pointer",padding:"10px 14px",background:T.cardBg,border:"2px solid #ff7733",borderRadius:4,fontSize:12,fontWeight:700,color:"#ff7733",listStyle:"none",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{display:"flex",alignItems:"center",gap:8}}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#ff7733" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 2h16v20l-8-5-8 5V2z" stroke="#ff7733" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    SALVATE
+                  </span>
+                  <span style={{color:T.textMuted,fontWeight:400,fontSize:11}}>{savedQs.length} domande</span>
+                </summary>
+                <div style={{borderLeft:"2px solid #ff7733",marginLeft:8,paddingLeft:12,marginTop:4}}>
+                  {savedQs.map((q,i) => (
+                    <div key={i} style={{background:T.cardBg,borderRadius:4,padding:12,marginBottom:6,fontSize:11,border:"1px solid "+T.border}}>
+                      <p style={{color:T.text,fontWeight:600,marginBottom:8,lineHeight:1.4}}>{q.q}</p>
+                      <p style={{color:"#00cc66",fontWeight:700,marginBottom:4}}>{q.opts[q.ans]}</p>
+                      <p style={{color:T.textMuted,fontStyle:"italic",lineHeight:1.4,fontSize:10}}>{q.expl}</p>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            );
+          })()}
           {CAT_ORDER.map(cat => {
             const qs = grouped[cat.code] || [];
             if (qs.length === 0) return null;
@@ -1125,6 +1240,17 @@ function BiometriaQuiz() {
               </button>
             );
           })}
+        </div>
+        {/* Bandierina SALVA — sotto le opzioni, allineata a destra */}
+        <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
+          <button onClick={() => toggleSaved(q.q)}
+            style={{background:"transparent",border:"none",cursor:"pointer",padding:6,color:currentQuestionSaved?"#ff7733":T.textFaint,transition:"color 0.2s",display:"flex",alignItems:"center",gap:6,fontSize:11,fontFamily:"inherit",fontWeight:700}}
+            title={currentQuestionSaved?"Rimuovi dalle salvate":"Salva questa domanda"}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill={currentQuestionSaved?"#ff7733":"none"} xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 2h16v20l-8-5-8 5V2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>{currentQuestionSaved?"SALVATA":"SALVA"}</span>
+          </button>
         </div>
         {/* Streak toast — above explanation */}
         {streakToast && (
